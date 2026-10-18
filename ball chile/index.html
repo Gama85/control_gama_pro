@@ -1,1 +1,2039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Control de Acceso Vehicular - Gama 85</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    * {box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;}
+    
+    body {height: 100%;
+      width: 100%;
+      overflow: auto;
+      background: #000000;
+      color: #0d900a;
+      padding: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;}
+    
+    #loader-screen {
+      position: fixed;
+      top: 0px;
+      left: 0px;
+      width: 100vw;
+      height: 100dvh;
+      background: #000000;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: opacity 0.5s;
+    }
 
+    .loader-logo {
+      width: 75%;
+      max-width: 300px;
+      height: auto;
+      margin-bottom: 200px;
+    }
+
+    .loader-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #0679be;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    .progress-container {
+      width: 90%;
+      max-width: 350px;
+      background: #00000000;
+      border-radius: 30px;
+      height: 12px;
+      overflow: hidden;
+      border: 1.5px solid #cd0000;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #153e81b4, #0056e4);
+      transition: width 0.1s linear;
+    }
+
+    .progress-text {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #0679be;
+    }
+
+    .card {
+      background: #00000000;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      height: calc(100dvh - 16px);
+      max-height: calc(100dvh - 16px);
+      padding: 16px;
+      box-shadow: 0 0 35px #1e293b;
+      border: 2.5px solid #3982fd;
+      display: none;
+      position: relative;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    #menuAccesoCard {
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #loginGuardiaCard {
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #adminPanelCard,
+    #historicoCard {
+      justify-content: space-between;
+    }
+
+    .main-logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      width: 100%;
+    }
+
+    .main-logo {
+      width: 180%;
+      max-width: 300px;
+      height: auto;
+    }
+
+    h2 {
+      margin-top: 8px;
+      text-align: center;
+      color: #2671ff;
+      font-size: 19px;
+      margin-bottom: 0px;
+      border-bottom: 1.3px solid #ab0303;
+    }
+
+    h3 {
+      color: #f6e90d;
+      font-size: 15px;
+      margin-top: 2px;
+      text-align: center;
+      border-bottom: 1.5px solid #ab0303;
+    }
+
+    .turno-subtitulo-container {
+      text-align: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ab0303;
+      padding-bottom: 4px;
+    }
+
+    .turno-subtitulo-text {
+      color: #ece210;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group {
+      margin-bottom: 5px;
+      text-align: left;
+      flex: none;
+    }
+
+    label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #f59e0b;
+      display: block;
+      margin-bottom: 1px;
+      text-transform: uppercase;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #38bdf8;
+    }
+    
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-wrapper input {
+      padding-right: 36px;
+    }
+
+    .toggle-password-btn {
+      position: absolute;
+      right: 6px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .permisos-container {
+      background: #696d7b38;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #eb0707;
+      margin-top: 4px;
+    }
+
+    .permiso-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: #3f7bff;
+      cursor: pointer;
+    }
+
+    .permiso-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .permiso-item input[type="checkbox"] {
+      width: auto;
+      cursor: pointer;
+    }
+
+    .accordion-card {
+      background: #14171e;
+      border: 1px solid #48f1604a;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      background: #162032;
+    }
+
+    .accordion-header:hover {
+      background: #0d941b13;
+    }
+
+    .accordion-title-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .accordion-icon {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, padding 0.3s ease;
+      padding: 0 12px;
+      background: #000000;
+    }
+
+    .accordion-card.active .accordion-content {
+      max-height: 900px;
+      padding: 10px;
+      border-top: 1px solid #1e293b;
+    }
+
+    .accordion-arrow {
+      font-size: 11px;
+      color: #94a3b8;
+      transition: transform 0.3s;
+    }
+
+    .accordion-card.active .accordion-arrow {
+      transform: rotate(180deg);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 6px;
+      flex: none;
+    }
+
+    button {
+      padding: 10px 13px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+      flex: none;
+      box-sizing: border-box;
+    }
+
+    @keyframes parpadeoBoton {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.65; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .btn-parpadeo {
+      animation: parpadeoBoton 1.5s infinite ease-in-out;
+    }
+
+    .btn-primary {
+      background: #10b981;
+      width: 100%;
+      color: #000000ef;
+    }
+
+    .btn-admin {
+      background: #e4cb00f2;
+      width: 100%;
+      color: #000000ef;
+    }
+
+    .btn-danger {
+      background: #f12828cc;
+      width: 100%;
+      color: #000000ef;
+    }
+
+    .btn-ingreso {
+      background: #07e197;
+      width: 100%;
+    }
+
+    .btn-salida {
+      background: #ef4444;
+      width: 100%;
+      color: #000000ef;
+    }
+
+    .btn-excel {
+      background: #07a60fd7;
+      width: 100%;
+      margin-top: 6px;
+      font-weight: bold;
+      padding: 10px;
+    }
+
+    .btn-info {
+      background: #6366f1;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: #000000;
+    }
+
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 11px;
+      flex: 1;
+    }
+
+    .btn-tabla-admin {
+      width: 70px;
+      padding: 6px 0;
+      font-size: 11px;
+      font-weight: bold;
+      border-radius: 8px;
+      text-align: center;
+      margin: 0;
+    }
+
+    .filtro-fechas {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex: none;
+    }
+
+    .filtro-fechas div {
+      flex: 1;
+    }
+
+    .table-container {
+      margin-top: 4px;
+      overflow-y: auto;
+      overflow-x: auto;
+      flex: 1 1 0px;
+      width: 100%;
+      border-radius: 8px;
+      border: 2px solid #d90303;
+      background: #111111;
+      scroll-behavior: smooth;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 6px 7px;
+      border-bottom: 1px solid #1cb0f88b;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #0995e9;
+      background: #100c0ce6;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .fila-jefatura {
+      background-color: #edd72f !important;
+      color: #000000 !important;
+      font-weight: bold;
+    }
+
+    .fila-jefatura td {
+      color: #000000 !important;
+    }
+
+    .fila-bloqueada {
+      background-color: #7f1d1d !important;
+      color: #ffffff !important;
+      font-weight: bold;
+    }
+
+    .fila-bloqueada td {
+      color: #fca5a5 !important;
+    }
+
+    #userLoginModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      background: #000;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .footer-sello {
+      text-align: center;
+      padding-top: 6px;
+      margin-top: 4px;
+      border-top: 1px solid #1e293b;
+      font-size: 10px;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      flex: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Modal de Contraseña Inicial -->
+  <div id="userLoginModal">
+    <div style="background: #111; padding: 30px; border-radius: 12px; border: 2px solid #3982fd; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 0 25px #1e293b;">
+      <h3 style="color: #f6e90d; margin-bottom: 8px; font-size: 18px;">ACCESO CLIENTE</h3>
+      <p style="color: #0d5afe; font-size: 12px; margin-bottom: 20px;">Control Vehicular GAMA-PRO</p>
+      <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+        <label>Contraseña Privada Cliente:</label>
+        <div class="password-wrapper">
+          <input type="password" id="userPasswordInput" placeholder="Ingrese clave de acceso">
+          <button type="button" class="toggle-password-btn" onclick="toggleMostrarPassword('userPasswordInput', this)">🙈</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="verificarClaveUsuario()">Ingresar al Sistema</button>
+      <p id="userErrorMsg" style="color: #ef4444; font-size: 12px; margin-top: 10px;"></p>
+    </div>
+  </div>
+
+  <!-- Pantalla de Carga -->
+  <div id="loader-screen">
+    <img src="Logo_form_ppu2.png" alt="Logo Gama 85" class="loader-logo">
+    <div class="loader-title">CONTROL VEHICULAR - GAMA 85</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">Cargando 0%</div>
+  </div>
+
+  <!-- Menú Principal -->
+  <div class="card" id="menuAccesoCard">
+    <div class="main-logo-container">
+      <img src="Logo_form_ppu2.png" alt="Logo Gama 85" class="main-logo">
+    </div>
+
+    <div style="width: 100%;">
+      <p style="text-align: center; color: #cec503; font-size: 14px; margin-bottom: 15px; border-bottom: 1px solid #ab0303;">Seleccione su nivel de acceso</p>
+      <button class="btn-primary" style="margin-bottom: 20px;" onclick="mostrarPantalla('loginGuardiaCard')">Control Vehicular</button>
+      <button class="btn-admin" style="margin-bottom: 20px;" onclick="mostrarPantalla('loginAdminCard')">Panel Administrador</button>
+    </div>
+
+    <div class="footer-sello">
+      Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+    </div>
+  </div>
+
+  <!-- Login / Acceso Directo Guardias (Ajustado con título, subtítulo debajo de la línea y botones centrados equilibradamente) -->
+  <div class="card" id="loginGuardiaCard">
+    <div style="width: 100%;">
+      <h2>ACCESO A CONTROL</h2>
+    </div>
+
+    <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: auto 0; padding: 10px 0;">
+      <p style="text-align: center; color: #38bdf8; font-size: 12px; margin-bottom: 30px; font-weight: 500;">
+        El sistema asignará el turno de forma automática según el horario actual
+      </p>
+
+      <button class="btn-primary" style="width: 100%; max-width: 320px; padding: 18px; font-size: 15px; font-weight: bold; border-radius: 12px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); margin-bottom: 15px;" onclick="iniciarSesionGuardiaAuto()">
+        🚗 Iniciar Control Vehicular
+      </button>
+
+      <button class="btn-danger" style="width: 100%; max-width: 320px; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 12px;" onclick="mostrarPantalla('menuAccesoCard')">
+        Volver
+      </button>
+    </div>
+  
+    <div style="width: 100%;">
+      <div class="footer-sello">
+        Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Administradores -->
+  <div class="card" id="loginAdminCard">
+    <div style="width: 100%;">
+      <h3>ACCESO ADMINISTRADOR</h3>
+    </div>
+    <div style="width: 100%; margin: auto 0px;">
+      <div class="form-group">
+        <label>Administrador</label>
+        <select id="loginAdminUser"></select>
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="loginAdminPass" placeholder="Ingrese contraseña">
+          <button type="button" class="toggle-password-btn" onclick="toggleMostrarPassword('loginAdminPass', this)">🙈</button>
+        </div>
+      </div>
+    </div>
+    <div style="width: 100%;">
+      <button class="btn-admin" onclick="iniciarSesionAdmin()">Iniciar Sesion</button>
+      <button class="btn-danger" style="margin-top: 8px;" onclick="mostrarPantalla('menuAccesoCard')">Volver</button>
+      <div class="footer-sello">
+        Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel de Administrador -->
+  <div class="card" id="adminPanelCard">
+    <div style="width: 100%; display: flex; flex-direction: column; height: 100%; min-height: 0;">
+      <h3>PANEL DE ADMINISTRACIÓN</h3>
+      <p style="text-align: center; color: #f59e0b; font-size: 12px; margin-bottom: 8px;" id="adminActivoLabel"></p>
+
+      <div style="flex: 1 1 auto; overflow-y: auto; min-height: 0;">
+        <!-- IMPORTAR EXCEL -->
+        <div class="accordion-card" id="accImportarMasivo">
+          <div class="accordion-header" onclick="toggleAcordeon('accImportarMasivo')">
+            <div class="accordion-title-container">
+              <svg class="accordion-icon" style="color: #10b981;" viewBox="0 0 24 24">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+              </svg>
+              <span style="color: #b5c600; font-weight: bold; font-size: 12px;">Importar Base de Datos / Padrón (.xlsx)</span>
+            </div>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            
+            <!-- OPCIÓN 1: PADRÓN BÁSICO -->
+            <div style="background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+              <label style="color: #38bdf8; font-size: 10px; margin-bottom: 4px; font-weight: bold;">1. Cargar Padrón Básico (Patente, Nombre, RUT)</label>
+              
+              <div class="form-group" style="margin-bottom: 4px;">
+                <input type="file" id="inputFilePadronBasico" accept=".xlsx, .xls" style="font-size: 11px; padding: 5px;">
+              </div>
+              <button class="btn-ingreso btn-parpadeo" style="width: 100%; font-size: 12px; padding: 8px;" onclick="procesarPadronBasico()">📥 Importar Padrón Básico</button>
+            </div>
+
+            <!-- OPCIÓN 2: RESPALDO HISTÓRICO COMPLETO -->
+            <div style="background: #0f172a; border: 1px solid #334155; padding: 8px; border-radius: 6px;">
+              <label style="color: #f59e0b; font-size: 10px; margin-bottom: 4px; font-weight: bold;">2. Cargar Respaldo Completo (Archivo Descargado App)</label>
+              <div class="form-group" style="margin-bottom: 4px;">
+                <input type="file" id="inputFileRespaldoCompleto" accept=".xlsx, .xls" style="font-size: 11px; padding: 5px;">
+              </div>
+              <button class="btn-admin btn-parpadeo" style="width: 100%; font-size: 12px; padding: 8px; color: #000;" onclick="procesarRespaldoCompleto()">📥 Restaurar Respaldo Completo</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- CREAR/MODIFICAR ADMINISTRADOR -->
+        <div class="accordion-card" id="accCrearUsuario">
+          <div class="accordion-header" onclick="toggleAcordeon('accCrearUsuario')">
+            <div class="accordion-title-container">
+              <svg class="accordion-icon" style="color: #38bdf8;" viewBox="0 0 24 24">
+                <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+              <span id="tituloAccCrearUsuario" style="color: #3e87fc; font-weight: bold; font-size: 12px;">Crear Administrador Secundario</span>
+            </div>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content" id="boxCrearUsuario">
+            <input type="hidden" id="usuarioEditandoOriginal" value="">
+            <div class="form-group">
+              <label>Nombre del Administrador</label>
+              <input type="text" id="nuevoNombre" placeholder="Nombre completo" oninput="formatearNombrePropio(this)">
+            </div>
+            <div class="form-group">
+              <label>Contraseña</label>
+              <div class="password-wrapper">
+                <input type="password" id="nuevoPass" placeholder="Contraseña">
+                <button type="button" class="toggle-password-btn" onclick="toggleMostrarPassword('nuevoPass', this)">🙈</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Permisos Autorizados:</label>
+              <div class="permisos-container">
+                <label class="permiso-item"><input type="checkbox" id="permCrearUsuario"> Crear Usuario</label>
+                <label class="permiso-item"><input type="checkbox" id="permModificarEliminar"> Modificar / Eliminar Usuarios</label>
+                <label class="permiso-item"><input type="checkbox" id="permVerHistorico"> Ver e Interactuar con Histórico / Excel</label>
+                <label class="permiso-item"><input type="checkbox" id="permDestacarVip"> Permitir Destacar o Desmarcar Vehículos (VIP)</label>
+                <label class="permiso-item"><input type="checkbox" id="permBloquearVehiculos"> Permitir Bloquear / Desbloquear Vehículos</label>
+                <label class="permiso-item"><input type="checkbox" id="permImportarBD"> Permitir Importar Base de Datos</label>
+              </div>
+            </div>
+            <button class="btn-admin" id="btnGuardarAdmin" style="margin-bottom: 4px;" onclick="guardarUsuario()">+ Crear Administrador</button>
+            <button class="btn-danger" id="btnCancelarEdicionAdmin" style="display: none; margin-bottom: 4px;" onclick="cancelarEdicionUsuario()">Cancelar Edición</button>
+          </div>
+        </div>
+
+        <!-- ADMINISTRADORES REGISTRADOS -->
+        <div class="accordion-card" id="accUsuariosReg">
+          <div class="accordion-header" onclick="toggleAcordeon('accUsuariosReg')">
+            <div class="accordion-title-container">
+              <svg class="accordion-icon" style="color: #cbd5e1;" viewBox="0 0 24 24">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+              </svg>
+              <span style="color: #f9173f; font-weight: bold; font-size: 12px;">Administradores Registrados</span>
+            </div>
+            <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div class="table-container" style="margin-top: 0; max-height: 140px; min-height: 90px; flex-grow: 0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th style="text-align: center;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaUsuariosAdmin"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width: 100%; flex: none;">
+      <button class="btn-info" id="btnIrHistorico" style="margin-top: 6px;" onclick="abrirHistoricoSiAutorizado()">🔍 Consultar Registro De Datos</button>
+      <button class="btn-danger" style="margin-top: 6px;" onclick="cerrarSesionAdmin()">Volver A Inicio</button>
+      <div class="footer-sello">
+        Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario Principal de Registro Vehicular -->
+  <div class="card" id="mainCard">
+    <div style="width: 100%; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;">
+      <h2>CONTROL VEHICULAR</h2>
+
+      <div class="turno-subtitulo-container">
+        <span class="turno-subtitulo-text" id="guardiaFijo"></span>
+      </div>
+
+      <div class="form-group">
+        <label>Patente del Vehículo:</label>
+        <input type="text" id="patente" placeholder="EJ: AB - 1234" oninput="procesarPatente()" style="text-transform: uppercase;">
+      </div>
+
+      <!-- ESTADO DE VALIDACIÓN Y ALERTA CON SUBMENÚ DE EXCEPCIÓN -->
+      <div id="estadoPadronContainer" style="margin-bottom: 5px; font-size: 11px; display: none;"></div>
+
+      <!-- Selector Rápido Inteligente para Múltiples Conductores -->
+      <div id="selectorConductorFrecuente" style="display: none; background: #162032; border: 1px solid #d8ee0e; border-radius: 8px; padding: 6px; margin-bottom: 6px; flex: none;">
+        <label style="color: #1fbd28; margin-bottom: 4px; font-size: 10px;">Patente Con Registros Variados "Verifique Conductor"</label>
+        <div id="botonesConductoresLista" style="display: flex; flex-direction: column; gap: 4px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre Conductor:</label>
+        <input type="text" id="nombreUsuario" placeholder="Nombre completo" oninput="formatearNombrePropio(this)">
+      </div>
+
+      <div class="form-group">
+        <label>Rut Conductor:</label>
+        <input type="text" id="rutConductor" inputmode="numeric" placeholder="12.345.678-9" oninput="formatearRutInput(this)">
+      </div>
+
+      <div class="btn-group" id="contenedorBotonesAccion">
+        <button class="btn-ingreso" id="btnMarcarIngreso" onclick="registrarMovimiento('Ingreso')">Marcar Ingreso</button>
+        <button class="btn-salida" id="btnMarcarSalida" onclick="registrarMovimiento('Salida')" style="display:none;">Marcar Salida</button>
+      </div>
+
+      <!-- TABLA DE REGISTROS DEL TURNO -->
+      <div class="table-container" id="contenedorTablaTurno">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: center;">Patente</th>
+              <th style="text-align: center;">Rut</th>
+              <th>Nombre</th>
+              <th style="text-align: center;">Ingreso</th>
+              <th style="text-align: center;">Salida</th>
+            </tr>
+          </thead>
+          <tbody id="tablaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="width: 100%; flex: none;">
+      <button class="btn-excel" onclick="exportarExcelPlanilla(registrosTurno, 'Turno_Activo')">📊 Descargar Registros Del Turno</button>
+      <button class="btn-danger" style="margin-top: 4px;" onclick="mostrarPantalla('loginGuardiaCard')">Salir</button>
+      <div class="footer-sello">
+        Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSULTA BASE DE DATOS GENERAL Y CONTROL DE BLOQUEO / EDICIÓN -->
+  <div class="card" id="historicoCard">
+    <div style="width: 100%; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;">
+      <h3>BASE DE DATOS GENERAL</h3>
+
+      <div style="display: flex; gap: 6px; margin-top:8px; margin-bottom: 8px; flex: none;">
+        <button class="btn-primary btn-sm" onclick="filtrarHoy()">Filtrar Solo Hoy</button>
+        <button class="btn-admin btn-sm" onclick="cargarHistóricoCompleto()">Ver Todos</button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 6px; flex: none;">
+        <input type="text" id="inputBuscarPatenteNombre" placeholder="Buscar por Patente, Rut o Conductor..." oninput="procesarBusquedaPatente(this)" style="text-transform: uppercase;">
+      </div>
+
+      <div class="filtro-fechas">
+        <div>
+          <label>Desde Fecha</label>
+          <input type="date" id="fechaDesde">
+        </div>
+        <div>
+          <label>Hasta Fecha</label>
+          <input type="date" id="fechaHasta">
+        </div>
+      </div>
+      <button class="btn-primary" style="padding: 9px 12px; font-size: 12px; margin-bottom: 4px; flex: none; width: 100%;" onclick="filtrarPorRango()">Filtrar por Rango</button>
+
+      <!-- MÓDULO EDICIÓN RÁPIDA DE REGISTRO HISTÓRICO -->
+      <div id="boxEditarRegistroBD" style="display: none; background: #1e293b; border: 2px solid #38bdf8; padding: 10px; border-radius: 8px; margin-bottom: 8px; flex: none;">
+        <h4 style="color: #38bdf8; font-size: 12px; margin-bottom: 6px; text-align: center;">✏️ Editar Registro de Base de Datos</h4>
+        <input type="hidden" id="editIndexBD" value="">
+        <input type="hidden" id="editPatenteOrigBD" value="">
+        <input type="hidden" id="editNombreOrigBD" value="">
+
+        <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+          <div style="flex: 1;">
+            <label style="font-size: 9px; color: #f59e0b;">Patente</label>
+            <input type="text" id="editPatenteInput" style="padding: 5px; font-size: 11px; text-transform: uppercase;" oninput="this.value = formatearPatenteTexto(this.value, null)">
+          </div>
+          <div style="flex: 1;">
+            <label style="font-size: 9px; color: #f59e0b;">RUT</label>
+            <input type="text" id="editRutInput" style="padding: 5px; font-size: 11px;" oninput="formatearRutInput(this)">
+          </div>
+        </div>
+        <div style="margin-bottom: 8px;">
+          <label style="font-size: 9px; color: #f59e0b;">Nombre Conductor</label>
+          <input type="text" id="editNombreInput" style="padding: 5px; font-size: 11px;" oninput="formatearNombrePropio(this)">
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn-primary btn-sm" onclick="guardarEdicionRegistroBD()">💾 Guardar Cambios</button>
+          <button type="button" class="btn-danger btn-sm" onclick="cancelarEdicionRegistroBD()">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- TABLA HISTÓRICA -->
+      <div class="table-container" id="contenedorTablaHistorica">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: center;">VIP</th>
+              <th style="text-align: center;">Bloquear</th>
+              <th style="text-align: center;">Acción</th>
+              <th style="text-align: center;">Fecha</th>
+              <th style="text-align: center;">Patente</th>
+              <th style="text-align: left;">Nombre</th>
+              <th style="text-align: left;">Rut</th>
+              <th style="text-align: center;">Ingreso</th>
+              <th style="text-align: center;">Salida</th>
+              <th>Turno</th>
+              <th>Excepción</th>
+              <th>Autorizado Por</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistoricaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="width: 100%; flex: none;">
+      <button class="btn-excel" style="font-size: 12px;" onclick="exportarExcelPlanilla(obtenerListaExportacionAdmin(), 'Registro_Vehicular')">📥 Descargar Base De Datos (.Xlsx)</button>
+      <button class="btn-danger" style="margin-top: 4px;" onclick="volverAlPanelTrabajo()">Panel Administrador</button>
+      <div class="footer-sello">
+        Desarrollado por <span style="color: #38bdf8; font-weight: bold;">Gama 85</span> | <span style="color: #10b981;">gamacode.cl</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const SUPER_ADMIN_NOMBRE = "Gama 85";
+  const CLAVE_USUARIO_DEFECTO = "ballchile26";
+
+  let turnoActual = "";
+  let adminActual = sessionStorage.getItem("adminActualSesion") || "";
+  let esSuperAdmin = (adminActual === SUPER_ADMIN_NOMBRE);
+  let permisosAdminActual = JSON.parse(sessionStorage.getItem("permisosAdminSesion")) || { 
+    crearUsuario: true, 
+    modificarEliminar: true, 
+    verHistorico: true, 
+    destacarVip: true, 
+    bloquearVehiculos: true,
+    importarBD: true 
+  };
+
+  let baseAdmins = JSON.parse(localStorage.getItem("baseAdminsR85_v27")) || { 
+    "Gama 85": { 
+      pass: "admin123", 
+      esSuper: true, 
+      permisos: { crearUsuario: true, modificarEliminar: true, verHistorico: true, destacarVip: true, bloquearVehiculos: true, importarBD: true } 
+    } 
+  };
+  
+  let basePatentes = JSON.parse(localStorage.getItem("basePatentesR85_v27")) || {};
+  let baseHistoricaBD = JSON.parse(localStorage.getItem("baseHistoricaR85_v27")) || [];
+  let registrosTurno = JSON.parse(localStorage.getItem("registrosTurnoActivo_v27")) || [];
+
+  window.onload = function() {
+    if (sessionStorage.getItem("usuario_autorizado") === "true") {
+      document.getElementById("userLoginModal").style.display = "none";
+      iniciarPantallaDeCarga();
+    }
+  };
+
+  function verificarClaveUsuario() {
+    const inputPass = document.getElementById("userPasswordInput").value.trim();
+    let claveGuardada = localStorage.getItem("claveUsuarioGama85") || CLAVE_USUARIO_DEFECTO;
+
+    if (inputPass === claveGuardada) {
+      sessionStorage.setItem("usuario_autorizado", "true");
+      document.getElementById("userLoginModal").style.display = "none";
+      iniciarPantallaDeCarga();
+    } else {
+      document.getElementById("userErrorMsg").textContent = "Contraseña de acceso incorrecta.";
+    }
+  }
+
+  function iniciarPantallaDeCarga() {
+    const loader = document.getElementById("loader-screen");
+    loader.style.display = "flex";
+    loader.style.opacity = "1";
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 2;
+      document.getElementById("progressBar").style.width = progress + "%";
+      document.getElementById("progressText").textContent = `Cargando ${progress}%`;
+      
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(() => {
+          loader.style.opacity = "0";
+          setTimeout(() => {
+            loader.style.display = "none";
+            mostrarPantalla('menuAccesoCard');
+            asegurarCuentaGama85();
+            cargarSelectores();
+          }, 500);
+        }, 400);
+      }
+    }, 15);
+  }
+
+  function asegurarCuentaGama85() {
+    baseAdmins["Gama 85"] = { 
+      pass: "admin123", 
+      esSuper: true, 
+      permisos: { crearUsuario: true, modificarEliminar: true, verHistorico: true, destacarVip: true, bloquearVehiculos: true, importarBD: true } 
+    };
+    localStorage.setItem("baseAdminsR85_v27", JSON.stringify(baseAdmins));
+  }
+
+  function toggleMostrarPassword(inputId, btnElement) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+      input.type = "text";
+      btnElement.textContent = "👁️";
+    } else {
+      input.type = "password";
+      btnElement.textContent = "🙈";
+    }
+  }
+
+  function toggleAcordeon(cardId) {
+    const card = document.getElementById(cardId);
+    const estaActiva = card.classList.contains('active');
+
+    document.querySelectorAll('.accordion-card').forEach(c => {
+      c.classList.remove('active');
+    });
+
+    if (!estaActiva) {
+      card.classList.add('active');
+    }
+  }
+
+  function formatearNombrePropio(input) {
+    let palabras = input.value.split(" ");
+    for (let i = 0; i < palabras.length; i++) {
+      if (palabras[i].length > 0) {
+        palabras[i] = palabras[i][0].toUpperCase() + palabras[i].substr(1).toLowerCase();
+      }
+    }
+    input.value = palabras.join(" ");
+  }
+
+  function formatearRutInput(input) {
+    let valor = input.value.replace(/[^0-9kK]/g, '').toUpperCase();
+    if (valor.length > 1) {
+      let cuerpo = valor.slice(0, -1);
+      let dv = valor.slice(-1);
+      cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      input.value = `${cuerpo}-${dv}`;
+    } else {
+      input.value = valor;
+    }
+  }
+
+  function mostrarPantalla(id) {
+    document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+    
+    const targetCard = document.getElementById(id);
+    targetCard.style.display = 'flex';
+
+    if (id === 'mainCard') {
+      actualizarTabla();
+      evaluarEstadoPatenteInput();
+    }
+  }
+
+  function cargarSelectores() {
+    asegurarCuentaGama85();
+
+    const selA = document.getElementById("loginAdminUser");
+    selA.innerHTML = '<option value="">-- Seleccionar Admin --</option>';
+    for (let a in baseAdmins) selA.innerHTML += `<option value="${a}">${a}</option>`;
+
+    actualizarTablaUsuariosAdmin();
+  }
+
+  function obtenerTurnoAutomatico() {
+    const ahora = new Date();
+    const hora = ahora.getHours();
+    if (hora >= 8 && hora < 20) {
+      return "Servicio Diurno";
+    } else {
+      return "Servicio Nocturno";
+    }
+  }
+
+  function iniciarSesionGuardiaAuto() {
+    adminActual = ""; 
+    sessionStorage.removeItem("adminActualSesion");
+    turnoActual = obtenerTurnoAutomatico();
+    document.getElementById("guardiaFijo").textContent = `${turnoActual}`;
+    mostrarPantalla('mainCard');
+  }
+
+  function iniciarSesionAdmin() {
+    const user = document.getElementById("loginAdminUser").value;
+    const pass = document.getElementById("loginAdminPass").value;
+    if (!user) return alert("Selecciona un usuario administrador.");
+
+    const datosAdmin = baseAdmins[user];
+    const passValida = typeof datosAdmin === 'object' ? datosAdmin.pass : datosAdmin;
+
+    if (pass === passValida) {
+      adminActual = user;
+      esSuperAdmin = (user === SUPER_ADMIN_NOMBRE || (datosAdmin && datosAdmin.esSuper));
+
+      if (esSuperAdmin) {
+        permisosAdminActual = { crearUsuario: true, modificarEliminar: true, verHistorico: true, destacarVip: true, bloquearVehiculos: true, importarBD: true };
+      } else {
+        permisosAdminActual = datosAdmin.permisos || { crearUsuario: false, modificarEliminar: false, verHistorico: false, destacarVip: false, bloquearVehiculos: false, importarBD: false };
+      }
+
+      sessionStorage.setItem("adminActualSesion", adminActual);
+      sessionStorage.setItem("permisosAdminSesion", JSON.stringify(permisosAdminActual));
+
+      document.getElementById("adminActivoLabel").textContent = `Sesión: ${adminActual} ${esSuperAdmin ? '(SuperAdmin)' : ''}`;
+      document.getElementById("loginAdminPass").value = "";
+
+      aplicarRestriccionesAdmin();
+      mostrarPantalla('adminPanelCard');
+    } else {
+      alert("Contraseña de Administrador incorrecta.");
+    }
+  }
+
+  function aplicarRestriccionesAdmin() {
+    const accImportar = document.getElementById("accImportarMasivo");
+    const accCrear = document.getElementById("accCrearUsuario");
+    const btnHist = document.getElementById("btnIrHistorico");
+
+    accImportar.style.display = (esSuperAdmin || permisosAdminActual.importarBD) ? "block" : "none";
+    accCrear.style.display = (esSuperAdmin || permisosAdminActual.crearUsuario || permisosAdminActual.modificarEliminar) ? "block" : "none";
+    btnHist.style.display = (esSuperAdmin || permisosAdminActual.verHistorico) ? "block" : "none";
+
+    actualizarTablaUsuariosAdmin();
+  }
+
+  function abrirHistoricoSiAutorizado() {
+    if (esSuperAdmin || permisosAdminActual.verHistorico) {
+      mostrarPantalla('historicoCard'); 
+      cargarHistóricoCompleto();
+    } else {
+      alert("No tienes autorización para consultar la Base de Datos General.");
+    }
+  }
+
+  function guardarUsuario() {
+    const orig = document.getElementById("usuarioEditandoOriginal").value;
+    const esModificacion = orig !== "";
+
+    if (esModificacion) {
+      if (!esSuperAdmin && !permisosAdminActual.modificarEliminar) return alert("No tienes permisos para modificar administradores.");
+    } else {
+      if (!esSuperAdmin && !permisosAdminActual.crearUsuario) return alert("No tienes permisos para crear administradores.");
+    }
+
+    const nombre = document.getElementById("nuevoNombre").value.trim();
+    const pass = document.getElementById("nuevoPass").value.trim();
+
+    if (!nombre) return alert("Ingresa un nombre de usuario.");
+    if (!pass) return alert("Ingresa una contraseña.");
+
+    const permCrear = document.getElementById("permCrearUsuario").checked;
+    const permModElim = document.getElementById("permModificarEliminar").checked;
+    const permVer = document.getElementById("permVerHistorico").checked;
+    const permVIP = document.getElementById("permDestacarVip").checked;
+    const permBloq = document.getElementById("permBloquearVehiculos").checked;
+    const permImp = document.getElementById("permImportarBD").checked;
+
+    if (esModificacion && orig !== nombre) delete baseAdmins[orig];
+
+    baseAdmins[nombre] = { 
+      pass: pass, 
+      esSuper: (nombre === SUPER_ADMIN_NOMBRE),
+      permisos: { crearUsuario: permCrear, modificarEliminar: permModElim, verHistorico: permVer, destacarVip: permVIP, bloquearVehiculos: permBloq, importarBD: permImp }
+    }; 
+
+    localStorage.setItem("baseAdminsR85_v27", JSON.stringify(baseAdmins));
+    alert(esModificacion ? `¡Administrador "${nombre}" modificado con éxito!` : `¡Administrador "${nombre}" creado con éxito!`);
+    cancelarEdicionUsuario();
+    cargarSelectores();
+  }
+
+  function cargarParaModificarUsuario(nombre) {
+    if (!esSuperAdmin && !permisosAdminActual.modificarEliminar) return alert("No tienes permisos.");
+    const datos = baseAdmins[nombre];
+    if (!datos) return;
+
+    document.getElementById("usuarioEditandoOriginal").value = nombre;
+    document.getElementById("nuevoNombre").value = nombre;
+    document.getElementById("nuevoPass").value = datos.pass || "";
+
+    const perms = datos.permisos || {};
+    document.getElementById("permCrearUsuario").checked = !!perms.crearUsuario;
+    document.getElementById("permModificarEliminar").checked = !!perms.modificarEliminar;
+    document.getElementById("permVerHistorico").checked = !!perms.verHistorico;
+    document.getElementById("permDestacarVip").checked = !!perms.destacarVip;
+    document.getElementById("permBloquearVehiculos").checked = !!perms.bloquearVehiculos;
+    document.getElementById("permImportarBD").checked = !!perms.importarBD;
+
+    document.getElementById("tituloAccCrearUsuario").textContent = `Modificar Administrador (${nombre})`;
+    document.getElementById("btnGuardarAdmin").textContent = "✏️ Guardar Cambios";
+    document.getElementById("btnCancelarEdicionAdmin").style.display = "block";
+
+    if (!document.getElementById("accCrearUsuario").classList.contains("active")) toggleAcordeon("accCrearUsuario");
+  }
+
+  function cancelarEdicionUsuario() {
+    document.getElementById("usuarioEditandoOriginal").value = "";
+    document.getElementById("nuevoNombre").value = "";
+    document.getElementById("nuevoPass").value = "";
+    document.getElementById("permCrearUsuario").checked = false;
+    document.getElementById("permModificarEliminar").checked = false;
+    document.getElementById("permVerHistorico").checked = false;
+    document.getElementById("permDestacarVip").checked = false;
+    document.getElementById("permBloquearVehiculos").checked = false;
+    document.getElementById("permImportarBD").checked = false;
+    document.getElementById("tituloAccCrearUsuario").textContent = "Crear Administrador Secundario";
+    document.getElementById("btnGuardarAdmin").textContent = "+ Crear Administrador";
+    document.getElementById("btnCancelarEdicionAdmin").style.display = "none";
+  }
+
+  function eliminarUsuario(nombre) {
+    if (!esSuperAdmin && !permisosAdminActual.modificarEliminar) return alert("No tienes permisos.");
+    if (nombre === SUPER_ADMIN_NOMBRE) return alert("No se puede eliminar al SuperAdministrador.");
+    
+    if (confirm(`¿Eliminar al administrador ${nombre}?`)) {
+      delete baseAdmins[nombre];
+      localStorage.setItem("baseAdminsR85_v27", JSON.stringify(baseAdmins));
+      cargarSelectores();
+    }
+  }
+
+  function actualizarTablaUsuariosAdmin() {
+    const tbody = document.getElementById("tablaUsuariosAdmin");
+    tbody.innerHTML = "";
+    const puedeModifElim = esSuperAdmin || permisosAdminActual.modificarEliminar;
+
+    for (let a in baseAdmins) {
+      const eSuper = (a === SUPER_ADMIN_NOMBRE);
+      let btnAccion = '-';
+      if (!eSuper) {
+        if (puedeModifElim) {
+          btnAccion = `
+            <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+              <button class="btn-warning btn-tabla-admin" onclick="cargarParaModificarUsuario('${a}')">Editar</button>
+              <button class="btn-danger btn-tabla-admin" onclick="eliminarUsuario('${a}')">Eliminar</button>
+            </div>`;
+        } else {
+          btnAccion = '<span style="color:#64748b;">Restringido</span>';
+        }
+      }
+      tbody.innerHTML += `<tr><td>${a}</td><td>${eSuper ? 'SuperAdmin' : 'Admin'}</td><td style="text-align: center;">${btnAccion}</td></tr>`;
+    }
+  }
+
+  // PROCESAR PADRÓN BÁSICO
+  function procesarPadronBasico() {
+    if (!esSuperAdmin && !permisosAdminActual.importarBD) return alert("No tienes permisos para importar bases de datos.");
+
+    const fileInput = document.getElementById("inputFilePadronBasico");
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccione un archivo Excel de Padrón Básico primero.");
+
+    const archivo = fileInput.files[0];
+    const lector = new FileReader();
+
+    lector.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const primeraHoja = workbook.Sheets[workbook.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(primeraHoja, { defval: "" });
+
+        if (filas.length === 0) return alert("El archivo Excel está vacío.");
+
+        let cargados = 0;
+        const fechaObj = new Date();
+        const fechaISO = fechaObj.toISOString().split('T')[0];
+        const fechaTxt = fechaObj.toLocaleDateString();
+
+        filas.forEach(fila => {
+          let clavePatente = Object.keys(fila).find(k => k.trim().toUpperCase() === "PATENTE");
+          let claveNombre = Object.keys(fila).find(k => k.trim().toUpperCase() === "NOMBRE");
+          let claveRut = Object.keys(fila).find(k => k.trim().toUpperCase() === "RUT");
+
+          let patente = clavePatente && fila[clavePatente] ? fila[clavePatente].toString().trim().toUpperCase() : "";
+          let nombre = claveNombre && fila[claveNombre] ? fila[claveNombre].toString().trim() : "Sin Nombre";
+          let rut = claveRut && fila[claveRut] ? fila[claveRut].toString().trim() : "";
+
+          if (patente) {
+            patente = formatearPatenteTexto(patente, null);
+
+            let existente = basePatentes[patente] || [];
+            if (!Array.isArray(existente)) existente = [existente];
+
+            let yaExiste = existente.find(c => c.nombre === nombre);
+            if (!yaExiste) {
+              existente.push({ rut: rut, nombre: nombre, destacado: false, bloqueado: false });
+            } else {
+              yaExiste.rut = rut;
+            }
+            basePatentes[patente] = existente;
+
+            baseHistoricaBD.push({
+              fechaISO: fechaISO, fecha: fechaTxt, patente, rut: rut || "--", nombre, destacado: false, bloqueado: false,
+              horaIngreso: "Base Importada", horaSalida: "Base Importada", turno: "Sistema Admin", excepcion: "NO", autorizadoPor: "--"
+            });
+            cargados++;
+          }
+        });
+
+        localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+        localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+
+        alert(`¡Éxito! Se cargaron ${cargados} registros correctamente desde el Padrón Básico.`);
+        fileInput.value = "";
+        cargarHistóricoCompleto();
+      } catch (err) {
+        console.error(err);
+        alert("Error al procesar el archivo Excel.");
+      }
+    };
+    lector.readAsArrayBuffer(archivo);
+  }
+
+  // RESTAURAR RESPALDO HISTÓRICO COMPLETO 1:1
+  function procesarRespaldoCompleto() {
+    if (!esSuperAdmin && !permisosAdminActual.importarBD) return alert("No tienes permisos para restaurar respaldos.");
+
+    const fileInput = document.getElementById("inputFileRespaldoCompleto");
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccione el archivo de respaldo completo primero.");
+
+    const archivo = fileInput.files[0];
+    const lector = new FileReader();
+
+    lector.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const primeraHoja = workbook.Sheets[workbook.SheetNames[0]];
+        const filas = XLSX.utils.sheet_to_json(primeraHoja, { defval: "" });
+
+        if (filas.length === 0) return alert("El archivo de respaldo está vacío.");
+
+        let restaurados = 0;
+        const fechaObjActual = new Date();
+        const fechaISOActual = fechaObjActual.toISOString().split('T')[0];
+
+        filas.forEach(fila => {
+          let clavePatente = Object.keys(fila).find(k => k.trim().toUpperCase() === "PATENTE");
+          let claveNombre = Object.keys(fila).find(k => k.trim().toUpperCase() === "NOMBRE");
+          let claveRut = Object.keys(fila).find(k => k.trim().toUpperCase() === "RUT");
+          let claveFecha = Object.keys(fila).find(k => k.trim().toUpperCase() === "FECHA");
+          let claveIngreso = Object.keys(fila).find(k => k.trim().toUpperCase() === "INGRESO");
+          let claveSalida = Object.keys(fila).find(k => k.trim().toUpperCase() === "SALIDA");
+          let claveTurno = Object.keys(fila).find(k => k.trim().toUpperCase() === "TURNO");
+          let claveEstado = Object.keys(fila).find(k => k.trim().toUpperCase() === "ESTADO");
+          let claveExcepcion = Object.keys(fila).find(k => k.trim().toUpperCase() === "EXCEPCIÓN" || k.trim().toUpperCase() === "EXCEPCION");
+          let claveAutorizado = Object.keys(fila).find(k => k.trim().toUpperCase() === "AUTORIZADO POR");
+
+          let patente = clavePatente && fila[clavePatente] ? fila[clavePatente].toString().trim().toUpperCase() : "";
+          let nombre = claveNombre && fila[claveNombre] ? fila[claveNombre].toString().trim() : "Sin Nombre";
+          let rut = claveRut && fila[claveRut] ? fila[claveRut].toString().trim() : "";
+
+          if (nombre.includes("[")) {
+            nombre = nombre.split("[")[0].trim();
+          }
+
+          if (patente) {
+            patente = formatearPatenteTexto(patente, null);
+
+            let fechaTxt = claveFecha && fila[claveFecha] ? fila[claveFecha].toString().trim() : fechaObjActual.toLocaleDateString();
+            let horaIngreso = claveIngreso && fila[claveIngreso] ? fila[claveIngreso].toString().trim() : "--";
+            let horaSalida = claveSalida && fila[claveSalida] ? fila[claveSalida].toString().trim() : "En recinto";
+            let turno = claveTurno && fila[claveTurno] ? fila[claveTurno].toString().trim() : "Sistema Admin";
+            let estadoStr = claveEstado && fila[claveEstado] ? fila[claveEstado].toString().trim().toUpperCase() : "";
+
+            let excepcionVal = claveExcepcion && fila[claveExcepcion] ? fila[claveExcepcion].toString().trim() : "NO";
+            let autorizadoPorVal = claveAutorizado && fila[claveAutorizado] ? fila[claveAutorizado].toString().trim() : "--";
+
+            let esVIP = estadoStr.includes("VIP") || estadoStr.includes("DESTACADO");
+            let esBloq = estadoStr.includes("NO AUTORIZADO") || estadoStr.includes("BLOQUEADO");
+
+            let fechaISO = fechaISOActual;
+            if (fechaTxt.includes("/")) {
+              let pF = fechaTxt.split("/");
+              if (pF.length === 3) {
+                fechaISO = `${pF[2]}-${pF[1].padStart(2, '0')}-${pF[0].padStart(2, '0')}`;
+              }
+            }
+
+            let existente = basePatentes[patente] || [];
+            if (!Array.isArray(existente)) existente = [existente];
+
+            let yaExiste = existente.find(c => c.nombre === nombre);
+            if (!yaExiste) {
+              existente.push({ rut: rut, nombre: nombre, destacado: esVIP, bloqueado: esBloq });
+            } else {
+              yaExiste.rut = rut;
+              yaExiste.destacado = esVIP || yaExiste.destacado;
+              yaExiste.bloqueado = esBloq || yaExiste.bloqueado;
+            }
+            basePatentes[patente] = existente;
+
+            baseHistoricaBD.push({
+              fechaISO: fechaISO, 
+              fecha: fechaTxt, 
+              patente: patente, 
+              rut: rut || "--", 
+              nombre: nombre, 
+              destacado: esVIP, 
+              bloqueado: esBloq,
+              horaIngreso: horaIngreso, 
+              horaSalida: horaSalida, 
+              turno: turno,
+              excepcion: excepcionVal,
+              autorizadoPor: autorizadoPorVal
+            });
+            
+            restaurados++;
+          }
+        });
+
+        localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+        localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+
+        alert(`¡Éxito! Se restauraron ${restaurados} registros exactos 1:1 desde la base de datos sin unificar.`);
+        fileInput.value = "";
+        cargarHistóricoCompleto();
+      } catch (err) {
+        console.error(err);
+        alert("Error al procesar el archivo de respaldo.");
+      }
+    };
+    lector.readAsArrayBuffer(archivo);
+  }
+
+  function descargarPlantillaBaseDatos() {
+    const encabezados = ["PATENTE", "NOMBRE", "RUT"];
+    const filasMatriz = [
+      encabezados,
+      ["AA - 0000", "Ejemplo Conductor", "12.345.678-9"]
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(filasMatriz);
+    const estiloEncabezado = {
+      font: { name: "Segoe UI", bold: true, sz: 11, color: { rgb: "000000" } },
+      fill: { fgColor: { rgb: "B7D7A8" } },
+      alignment: { horizontal: "left", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cell_address]) continue;
+        worksheet[cell_address].s = R === 0 ? estiloEncabezado : {
+          font: { name: "Segoe UI", sz: 10, color: { rgb: "000000" } },
+          alignment: { horizontal: "left", vertical: "center" },
+          border: {
+            top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } }
+          }
+        };
+      }
+    }
+
+    worksheet['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 15 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Plantilla_Padrón");
+    XLSX.writeFile(workbook, "Plantilla_Control_Vehicular_Gama.xlsx");
+  }
+
+  function formatearPatenteTexto(valor, inputElement) {
+    let limpia = valor.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let esCompleta = false;
+    let formateada = limpia;
+    
+    if (/^[A-Z]{4}\d{2}$/.test(limpia)) {
+      formateada = limpia.replace(/^([A-Z]{4})(\d{2})$/, '$1 - $2');
+      esCompleta = true; 
+    } else if (/^[A-Z]{2}\d{4}$/.test(limpia)) {
+      formateada = limpia.replace(/^([A-Z]{2})(\d{4})$/, '$1 - $2');
+      esCompleta = true;
+    } else if (/^[A-Z]{3}\d{2}$/.test(limpia)) {
+      formateada = limpia.replace(/^([A-Z]{3})(\d{2})$/, '$1 - $2');
+      esCompleta = true;
+    }
+
+    if (esCompleta && inputElement) {
+      setTimeout(() => { inputElement.blur(); }, 100);
+    }
+    return formateada;
+  }
+
+  function esPatenteBloqueada(patente, nombre) {
+    let list = basePatentes[patente];
+    if (!list) return false;
+    if (!Array.isArray(list)) list = [list];
+    let p = list.find(c => c.nombre === nombre);
+    if (p) return !!p.bloqueado;
+    return list.some(c => !!c.bloqueado);
+  }
+
+  function procesarPatente() {
+    const input = document.getElementById("patente");
+    const valorFormateado = formatearPatenteTexto(input.value, input);
+    input.value = valorFormateado;
+
+    const contenedorSelector = document.getElementById("selectorConductorFrecuente");
+    const contenedorBotones = document.getElementById("botonesConductoresLista");
+    const estadoPadron = document.getElementById("estadoPadronContainer");
+    const btnIngreso = document.getElementById("btnMarcarIngreso");
+    
+    contenedorBotones.innerHTML = "";
+    contenedorSelector.style.display = "none";
+    estadoPadron.style.display = "none";
+    estadoPadron.innerHTML = "";
+    btnIngreso.disabled = false;
+
+    if (!valorFormateado || valorFormateado.length < 5) {
+      document.getElementById("rutConductor").value = "";
+      document.getElementById("nombreUsuario").value = "";
+      evaluarEstadoPatenteInput();
+      return;
+    }
+
+    let infoVehiculo = basePatentes[valorFormateado];
+
+    if (infoVehiculo) {
+      let list = Array.isArray(infoVehiculo) ? infoVehiculo : [infoVehiculo];
+      let hayBloqueo = list.some(c => !!c.bloqueado);
+
+      if (hayBloqueo) {
+        estadoPadron.style.display = "block";
+        estadoPadron.innerHTML = `
+          <div style="background: #450a0a; border: 2px solid #ef4444; padding: 8px; border-radius: 6px; text-align: center; margin-bottom: 6px;">
+            <span style="color: #ffffff; font-weight: bold; font-size: 12px; display: block; margin-bottom: 6px;">⛔ PROHIBIDO EL INGRESO: VEHÍCULO / CONDUCTOR NO AUTORIZADO</span>
+            <div style="background: #111; padding: 6px; border-radius: 4px; border: 1px dashed #f59e0b; text-align: left;">
+              <label style="color: #f59e0b; font-size: 10px; margin-bottom: 4px;">Seleccione autorización excepcional de ingreso:</label>
+              <select id="selectAutorizacionExcepcion" style="font-size: 11px; padding: 5px; margin-bottom: 6px;">
+                <option value="">-- Seleccionar Quién Autoriza --</option>
+                <option value="Autorizado por Gerencia">Autorizado por Gerencia</option>
+                <option value="Autorizado por Supervisor de Turno">Autorizado por Supervisor de Turno</option>
+                <option value="Autorizado por Administración">Autorizado por Administración</option>
+              </select>
+              <button type="button" class="btn-warning" style="font-size: 11px; padding: 6px; width: 100%; font-weight: bold; border-radius: 4px;" onclick="desbloquearIngresoExcepcional()">🔓 Habilitar Ingreso Excepcional</button>
+            </div>
+          </div>
+        `;
+        btnIngreso.disabled = true;
+      } else {
+        estadoPadron.style.display = "block";
+        estadoPadron.innerHTML = `<span style="color: #10b981; font-weight: bold;">✔ Vehículo Autorizado (Registrado en Padrón Permanente)</span>`;
+      }
+
+      if (list.length > 1) {
+        contenedorSelector.style.display = "block";
+        list.forEach(c => {
+          let btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "btn-primary";
+          btn.style.padding = "5px 8px";
+          btn.style.fontSize = "11px";
+          btn.style.background = c.bloqueado ? "#ef4444" : "#9bd7f5df";
+          btn.textContent = `${c.bloqueado ? '🚫 NO AUTORIZADO: ' : '👤 '}${c.nombre} (RUT: ${c.rut || 'Sin RUT'})`;
+          
+          btn.onclick = function() {
+            document.getElementById("rutConductor").value = c.rut || "";
+            document.getElementById("nombreUsuario").value = c.nombre || "";
+            contenedorSelector.style.display = "none";
+          };
+          contenedorBotones.appendChild(btn);
+        });
+      } else {
+        let unCon = list[0];
+        document.getElementById("rutConductor").value = unCon.rut || "";
+        document.getElementById("nombreUsuario").value = unCon.nombre || "";
+      }
+    } else {
+      estadoPadron.style.display = "block";
+      estadoPadron.innerHTML = `
+        <div style="background: #2a1215; border: 1px solid #f59e0b; padding: 6px; border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
+          <span style="color: #f59e0b; font-weight: bold;">⚠ Alerta: Este vehículo NO está registrado en el padrón permanente.</span>
+        </div>
+      `;
+    }
+
+    evaluarEstadoPatenteInput();
+  }
+
+  let observacionExcepcionActual = "";
+
+  function desbloquearIngresoExcepcional() {
+    const select = document.getElementById("selectAutorizacionExcepcion");
+    if (!select || !select.value) {
+      return alert("Debe seleccionar en el submenú quién autoriza el ingreso excepcional antes de habilitarlo.");
+    }
+    observacionExcepcionActual = select.value;
+    const btnIngreso = document.getElementById("btnMarcarIngreso");
+    btnIngreso.disabled = false;
+    alert(`ATENCIÓN: Ingreso habilitado. Quedará registrado con la observación: "${observacionExcepcionActual}".`);
+  }
+
+  function procesarBusquedaPatente(input) {
+    input.value = formatearPatenteTexto(input.value, null);
+    filtrarPorPatenteNombre();
+  }
+
+  function evaluarEstadoPatenteInput() {
+    const patenteVal = document.getElementById("patente").value.trim();
+    const btnIngreso = document.getElementById("btnMarcarIngreso");
+    const btnSalida = document.getElementById("btnMarcarSalida");
+
+    if (!patenteVal) {
+      btnIngreso.style.display = "block";
+      btnSalida.style.display = "none";
+      return;
+    }
+
+    let enRecinto = registrosTurno.find(r => r.patente === patenteVal && (!r.horaSalida || r.horaSalida === "En recinto"));
+
+    if (enRecinto) {
+      btnIngreso.style.display = "none";
+      btnSalida.style.display = "block";
+      if (enRecinto.rut) document.getElementById("rutConductor").value = enRecinto.rut;
+      if (enRecinto.nombre) document.getElementById("nombreUsuario").value = enRecinto.nombre;
+    } else {
+      btnIngreso.style.display = "block";
+      btnSalida.style.display = "none";
+    }
+  }
+
+  function esPatenteDestacada(patente, nombre) {
+    let list = basePatentes[patente];
+    if (!list) return false;
+    if (!Array.isArray(list)) list = [list];
+    let p = list.find(c => c.nombre === nombre);
+    if (p) return !!p.destacado;
+    return list.some(c => !!c.destacado);
+  }
+
+  function registrarMovimiento(tipo) {
+    const patente = document.getElementById("patente").value.trim();
+    const rut = document.getElementById("rutConductor").value.trim();
+    const nombre = document.getElementById("nombreUsuario").value.trim();
+    
+    const fechaObj = new Date();
+    const fechaISO = fechaObj.toISOString().split('T')[0];
+    const fechaTxt = fechaObj.toLocaleDateString();
+    const hora = fechaObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    if (!patente) return alert("Ingrese la patente del vehículo.");
+
+    let existente = basePatentes[patente] || [];
+    if (!Array.isArray(existente)) existente = [existente];
+    
+    let personaEncontrada = existente.find(c => c.nombre === nombre || (rut && c.rut === rut));
+    let esDestacado = personaEncontrada ? !!personaEncontrada.destacado : false;
+    let esBloqueado = esPatenteBloqueada(patente, nombre);
+
+    if (!personaEncontrada && nombre) {
+      existente.push({ rut: rut || "", nombre: nombre, destacado: false, bloqueado: false });
+      basePatentes[patente] = existente;
+      localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+    }
+
+    let registroActivo = registrosTurno.find(r => r.patente === patente && (!r.horaSalida || r.horaSalida === "En recinto"));
+
+    if (tipo === 'Ingreso') {
+      if (!nombre) return alert("Ingrese el nombre del conductor para el ingreso.");
+      if (registroActivo) {
+        return alert(`El vehículo con patente ${patente} ya se encuentra registrado "En recinto".`);
+      }
+
+      let excepcionTxt = "NO";
+      let autorizadoPorTxt = "--";
+
+      if (esBloqueado && observacionExcepcionActual) {
+        excepcionTxt = "SÍ (EXCEPCIÓN)";
+        autorizadoPorTxt = observacionExcepcionActual;
+      }
+
+      let nuevoReg = { 
+        fechaISO, 
+        fecha: fechaTxt, 
+        patente, 
+        rut: rut || "--", 
+        nombre: nombre, 
+        destacado: esDestacado, 
+        bloqueado: esBloqueado, 
+        horaIngreso: hora, 
+        horaSalida: "En recinto", 
+        turno: turnoActual,
+        excepcion: excepcionTxt,
+        autorizadoPor: autorizadoPorTxt
+      };
+
+      registrosTurno.push(nuevoReg);
+      baseHistoricaBD.push(nuevoReg);
+    } else {
+      if (registroActivo) {
+        registroActivo.horaSalida = hora;
+        if (rut) registroActivo.rut = rut;
+      } else {
+        let hAbierto = baseHistoricaBD.find(h => h.patente === patente && (h.horaSalida === "En recinto" || !h.horaSalida));
+        if (hAbierto) {
+          hAbierto.horaSalida = hora;
+          registrosTurno.push(hAbierto);
+        } else {
+          let nuevoReg = { fechaISO, fecha: fechaTxt, patente, rut: rut || "--", nombre: nombre || "Desconocido", destacado: esDestacado, bloqueado: esBloqueado, horaIngreso: "--", horaSalida: hora, turno: turnoActual, excepcion: "NO", autorizadoPor: "--" };
+          registrosTurno.push(nuevoReg);
+          baseHistoricaBD.push(nuevoReg);
+        }
+      }
+    }
+
+    observacionExcepcionActual = "";
+
+    localStorage.setItem("registrosTurnoActivo_v27", JSON.stringify(registrosTurno));
+    localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+
+    actualizarTabla();
+    document.getElementById("patente").value = "";
+    document.getElementById("rutConductor").value = "";
+    document.getElementById("nombreUsuario").value = "";
+    document.getElementById("selectorConductorFrecuente").style.display = "none";
+    document.getElementById("estadoPadronContainer").style.display = "none";
+    evaluarEstadoPatenteInput();
+  }
+
+  function actualizarTabla() {
+    const tbody = document.getElementById("tablaBody");
+    const contenedor = document.getElementById("contenedorTablaTurno");
+    tbody.innerHTML = "";
+    
+    registrosTurno.forEach(r => {
+      let esVIP = esPatenteDestacada(r.patente, r.nombre) || r.destacado;
+      let esBloq = esPatenteBloqueada(r.patente, r.nombre) || r.bloqueado;
+      let claseFila = esBloq ? 'class="fila-bloqueada"' : (esVIP ? 'class="fila-jefatura"' : '');
+      let estadoSalida = (r.horaSalida && r.horaSalida !== "En recinto") ? r.horaSalida : '<span style="color: #0567e1; font-weight: bold;">En recinto</span>';
+      
+      tbody.innerHTML += `
+        <tr ${claseFila}>
+          <td style="text-align: center;"><b>${r.patente}</b></td>
+          <td style="text-align: center;">${r.rut || '--'}</td>
+          <td>${r.nombre} ${esBloq && r.excepcion && r.excepcion !== "NO" ? ' 🔓' : ''}</td>
+          <td style="text-align: center;">${r.horaIngreso}</td>
+          <td style="text-align: center;">${estadoSalida}</td>
+        </tr>`;
+    });
+
+    setTimeout(() => { contenedor.scrollTop = contenedor.scrollHeight; }, 100);
+  }
+
+  let listaHistoricoFiltrada = [];
+
+  function cargarHistóricoCompleto() {
+    listaHistoricoFiltrada = [...baseHistoricaBD];
+    document.getElementById("inputBuscarPatenteNombre").value = "";
+    renderizarTablaHistorica();
+  }
+
+  function filtrarHoy() {
+    const hoyISO = new Date().toISOString().split('T')[0];
+    listaHistoricoFiltrada = baseHistoricaBD.filter(h => h.fechaISO === hoyISO);
+    renderizarTablaHistorica();
+  }
+
+  function filtrarPorRango() {
+    const desde = document.getElementById("fechaDesde").value;
+    const hasta = document.getElementById("fechaHasta").value;
+    if (!desde || !hasta) return alert("Seleccione ambas fechas (Desde y Hasta).");
+    listaHistoricoFiltrada = baseHistoricaBD.filter(h => h.fechaISO >= desde && h.fechaISO <= hasta);
+    renderizarTablaHistorica();
+  }
+
+  function filtrarPorPatenteNombre() {
+    const query = document.getElementById("inputBuscarPatenteNombre").value.trim().toUpperCase();
+    if (!query) {
+      listaHistoricoFiltrada = [...baseHistoricaBD];
+    } else {
+      listaHistoricoFiltrada = baseHistoricaBD.filter(h => 
+        (h.patente && h.patente.toUpperCase().includes(query)) || 
+        (h.rut && h.rut.toUpperCase().includes(query)) || 
+        (h.nombre && h.nombre.toUpperCase().includes(query))
+      );
+    }
+    renderizarTablaHistorica();
+  }
+
+  function cambiarEstadoDestacadoAdmin(indexFiltrado, chkElement) {
+    if (!esSuperAdmin && !permisosAdminActual.destacarVip) {
+      chkElement.checked = !chkElement.checked;
+      return alert("No tienes permisos para destacar vehículos VIP.");
+    }
+
+    let reg = listaHistoricoFiltrada[indexFiltrado];
+    if (!reg) return;
+
+    let nuevoEstado = chkElement.checked;
+    reg.destacado = nuevoEstado;
+
+    let list = basePatentes[reg.patente] || [];
+    if (!Array.isArray(list)) list = [list];
+
+    let p = list.find(c => c.nombre === reg.nombre);
+    if (p) {
+      p.destacado = nuevoEstado;
+    } else {
+      list.push({ rut: reg.rut, nombre: reg.nombre, destacado: nuevoEstado, bloqueado: false });
+    }
+    basePatentes[reg.patente] = list;
+
+    baseHistoricaBD.forEach(h => {
+      if (h.patente === reg.patente && h.nombre === reg.nombre) {
+        h.destacado = nuevoEstado;
+      }
+    });
+
+    localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+    localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+
+    renderizarTablaHistorica();
+    actualizarTabla();
+  }
+
+  function cambiarEstadoBloqueadoAdmin(indexFiltrado, chkElement) {
+    if (!esSuperAdmin && !permisosAdminActual.bloquearVehiculos) {
+      chkElement.checked = !chkElement.checked;
+      return alert("No tienes permisos para bloquear vehículos.");
+    }
+
+    let reg = listaHistoricoFiltrada[indexFiltrado];
+    if (!reg) return;
+
+    let nuevoEstadoBloqueo = chkElement.checked;
+    reg.bloqueado = nuevoEstadoBloqueo;
+
+    let list = basePatentes[reg.patente] || [];
+    if (!Array.isArray(list)) list = [list];
+
+    let p = list.find(c => c.nombre === reg.nombre);
+    if (p) {
+      p.bloqueado = nuevoEstadoBloqueo;
+    } else {
+      list.push({ rut: reg.rut, nombre: reg.nombre, destacado: false, bloqueado: nuevoEstadoBloqueo });
+    }
+    basePatentes[reg.patente] = list;
+
+    baseHistoricaBD.forEach(h => {
+      if (h.patente === reg.patente && h.nombre === reg.nombre) {
+        h.bloqueado = nuevoEstadoBloqueo;
+      }
+    });
+
+    localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+    localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+
+    renderizarTablaHistorica();
+    actualizarTabla();
+  }
+
+  function renderizarTablaHistorica() {
+    const tbody = document.getElementById("tablaHistoricaBody");
+    const contenedor = document.getElementById("contenedorTablaHistorica");
+    tbody.innerHTML = "";
+    
+    if (!listaHistoricoFiltrada || listaHistoricoFiltrada.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; color:#94a3b8; padding: 20px;">No se encontraron registros.</td></tr>`;
+      return;
+    }
+
+    const estaAutorizadoParaDestacar = esSuperAdmin || permisosAdminActual.destacarVip;
+    const estaAutorizadoParaBloquear = esSuperAdmin || permisosAdminActual.bloquearVehiculos;
+    const estaAutorizadoParaEditar = esSuperAdmin || permisosAdminActual.modificarEliminar;
+
+    listaHistoricoFiltrada.forEach((h, index) => {
+      let esVIP = !!h.destacado;
+      let esBloq = !!h.bloqueado;
+      let claseFila = esBloq ? 'class="fila-bloqueada"' : (esVIP ? 'class="fila-jefatura"' : '');
+
+      let btnEdit = estaAutorizadoParaEditar 
+        ? `<button class="btn-warning" style="padding: 2px 6px; font-size: 10px; border-radius: 4px;" onclick="cargarEdicionRegistroBD(${index})">✏️</button>` 
+        : '-';
+
+      let excepcionTxt = h.excepcion || "NO";
+      let autorizadoPorTxt = h.autorizadoPor || "--";
+
+      tbody.innerHTML += `
+        <tr ${claseFila}>
+          <td style="text-align: center;">
+            <input type="checkbox" ${esVIP ? 'checked' : ''} ${!estaAutorizadoParaDestacar ? 'disabled' : ''} onchange="cambiarEstadoDestacadoAdmin(${index}, this)">
+          </td>
+          <td style="text-align: center;">
+            <input type="checkbox" ${esBloq ? 'checked' : ''} ${!estaAutorizadoParaBloquear ? 'disabled' : ''} onchange="cambiarEstadoBloqueadoAdmin(${index}, this)">
+          </td>
+          <td style="text-align: center;">${btnEdit}</td>
+          <td style="text-align: center;">${h.fecha}</td>
+          <td style="text-align: center;"><b>${h.patente}</b></td>
+          <td style="text-align: left;">${h.nombre}</td>
+          <td style="text-align: right;">${h.rut || '--'}</td>
+          <td style="text-align: center;">${h.horaIngreso}</td>
+          <td style="text-align: center;">${h.horaSalida || 'En recinto'}</td>
+          <td style="text-align: left;">${h.turno || '--'}</td>
+          <td style="text-align: center; color: ${excepcionTxt.includes('SÍ') || excepcionTxt.includes('EXCEPCIÓN') ? '#f59e0b' : '#94a3b8'};">${excepcionTxt}</td>
+          <td style="text-align: left;">${autorizadoPorTxt}</td>
+        </tr>`;
+    });
+
+    setTimeout(() => { contenedor.scrollTop = contenedor.scrollHeight; }, 100);
+  }
+
+  function cargarEdicionRegistroBD(index) {
+    const reg = listaHistoricoFiltrada[index];
+    if (!reg) return;
+
+    document.getElementById("editIndexBD").value = index;
+    document.getElementById("editPatenteOrigBD").value = reg.patente;
+    document.getElementById("editNombreOrigBD").value = reg.nombre;
+
+    document.getElementById("editPatenteInput").value = reg.patente;
+    document.getElementById("editRutInput").value = reg.rut || "";
+    document.getElementById("editNombreInput").value = reg.nombre;
+
+    document.getElementById("boxEditarRegistroBD").style.display = "block";
+    document.getElementById("boxEditarRegistroBD").scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function cancelarEdicionRegistroBD() {
+    document.getElementById("boxEditarRegistroBD").style.display = "none";
+  }
+
+  function guardarEdicionRegistroBD() {
+    const idx = document.getElementById("editIndexBD").value;
+    const patOrig = document.getElementById("editPatenteOrigBD").value;
+    const nomOrig = document.getElementById("editNombreOrigBD").value;
+
+    const nuevaPatente = document.getElementById("editPatenteInput").value.trim().toUpperCase();
+    const nuevoRut = document.getElementById("editRutInput").value.trim();
+    const nuevoNombre = document.getElementById("editNombreInput").value.trim();
+
+    if (!nuevaPatente || !nuevoNombre) {
+      return alert("La patente y el nombre del conductor no pueden quedar vacíos.");
+    }
+
+    let regFiltrado = listaHistoricoFiltrada[idx];
+    if (!regFiltrado) return;
+
+    let regReal = baseHistoricaBD.find(h => h === regFiltrado || (h.patente === patOrig && h.nombre === nomOrig && h.fechaISO === regFiltrado.fechaISO));
+
+    if (regReal) {
+      regReal.patente = nuevaPatente;
+      regReal.rut = nuevoRut || "--";
+      regReal.nombre = nuevoNombre;
+    }
+
+    if (basePatentes[patOrig]) {
+      let listOrig = Array.isArray(basePatentes[patOrig]) ? basePatentes[patOrig] : [basePatentes[patOrig]];
+      let pIdx = listOrig.findIndex(c => c.nombre === nomOrig);
+      
+      if (pIdx !== -1) {
+        let elemento = listOrig.splice(pIdx, 1)[0];
+        elemento.rut = nuevoRut;
+        elemento.nombre = nuevoNombre;
+
+        if (listOrig.length === 0) delete basePatentes[patOrig];
+        else basePatentes[patOrig] = listOrig;
+
+        let listDest = basePatentes[nuevaPatente] || [];
+        if (!Array.isArray(listDest)) listDest = [listDest];
+        listDest.push(elemento);
+        basePatentes[nuevaPatente] = listDest;
+      }
+    }
+
+    localStorage.setItem("baseHistoricaR85_v27", JSON.stringify(baseHistoricaBD));
+    localStorage.setItem("basePatentesR85_v27", JSON.stringify(basePatentes));
+
+    alert("¡Registro corregido y actualizado correctamente!");
+    cancelarEdicionRegistroBD();
+    filtrarPorPatenteNombre();
+    actualizarTabla();
+  }
+
+  function obtenerListaExportacionAdmin() {
+    return (listaHistoricoFiltrada && listaHistoricoFiltrada.length > 0) ? listaHistoricoFiltrada : baseHistoricaBD;
+  }
+
+  function exportarExcelPlanilla(datosArray, prefijoNombre) {
+    if (!datosArray || datosArray.length === 0) return alert("No hay datos disponibles para exportar.");
+
+    const ahora = new Date();
+    const anio = ahora.getFullYear();
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    
+    const fechaHoy = `${anio}-${mes}-${dia}`;
+    const nombreArchivoFinal = `Gama_Control_${prefijoNombre}_${fechaHoy}.xlsx`;
+
+    const encabezados = ["FECHA", "PATENTE", "NOMBRE", "RUT", "INGRESO", "SALIDA", "TURNO", "ESTADO", "EXCEPCIÓN", "AUTORIZADO POR"];
+    const filasMatriz = [encabezados];
+
+    datosArray.forEach(item => {
+      let esBloq = esPatenteBloqueada(item.patente, item.nombre) || item.bloqueado;
+      let esVIP = esPatenteDestacada(item.patente, item.nombre) || item.destacado;
+      let estadoTxt = esBloq ? "NO AUTORIZADO / BLOQUEADO" : (esVIP ? "VIP / DESTACADO" : "NORMAL");
+
+      filasMatriz.push([
+        item.fecha || "", item.patente || "", item.nombre || "", item.rut || "",
+        item.horaIngreso || "--", item.horaSalida || "En recinto", item.turno || "", estadoTxt,
+        item.excepcion || "NO", item.autorizadoPor || "--"
+      ]);
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(filasMatriz);
+    const estiloEncabezado = {
+      font: { name: "Segoe UI", bold: true, sz: 11, color: { rgb: "000000" } },
+      fill: { fgColor: { rgb: "B7D7A8" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    function obtenerAlineacionColumna(colIndex) {
+      if (colIndex === 0 || colIndex === 1 || colIndex === 4 || colIndex === 5 || colIndex === 7 || colIndex === 8) return "center";
+      if (colIndex === 3) return "right";
+      return "left";
+    }
+
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      let esFilaVIP = false;
+      let esFilaBloq = false;
+
+      if (R > 0 && datosArray[R - 1]) {
+        let reg = datosArray[R - 1];
+        if (esPatenteBloqueada(reg.patente, reg.nombre) || reg.bloqueado) esFilaBloq = true;
+        else if (esPatenteDestacada(reg.patente, reg.nombre) || reg.destacado) esFilaVIP = true;
+      }
+
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cell_address]) continue;
+        let alignHoriz = obtenerAlineacionColumna(C);
+
+        if (R === 0) {
+          worksheet[cell_address].s = estiloEncabezado;
+        } else {
+          let fgColor = esFilaBloq ? "FCA5A5" : (esFilaVIP ? "FEF08A" : undefined);
+          let fontColor = esFilaBloq ? "7F1D1D" : (esFilaVIP ? "78350F" : "000000");
+
+          worksheet[cell_address].s = {
+            font: { name: "Segoe UI", bold: (esFilaVIP || esFilaBloq), sz: 10, color: { rgb: fontColor } },
+            fill: fgColor ? { fgColor: { rgb: fgColor } } : undefined,
+            alignment: { horizontal: alignHoriz, vertical: "center" },
+            border: {
+              top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } },
+              left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } }
+            }
+          };
+        }
+      }
+    }
+
+    const colWidths = encabezados.map((hdr, cIdx) => {
+      let maxLen = hdr.length;
+      datosArray.forEach(row => {
+        const val = filasMatriz.slice(1).map(r => r[cIdx] ? r[cIdx].toString() : "");
+        val.forEach(v => { if (v.length > maxLen) maxLen = v.length; });
+      });
+      return { wch: Math.max(maxLen + 4, 12) };
+    });
+
+    worksheet['!cols'] = colWidths;
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Gama_Control_Datos");
+    XLSX.writeFile(workbook, nombreArchivoFinal);
+  }
+
+  function volverAlPanelTrabajo() {
+    let sesionGuardada = sessionStorage.getItem("adminActualSesion");
+    if (adminActual !== "" || sesionGuardada) {
+      if (!adminActual && sesionGuardada) {
+        adminActual = sesionGuardada;
+        document.getElementById("adminActivoLabel").textContent = `Sesión: ${adminActual}`;
+      }
+      mostrarPantalla('adminPanelCard');
+    } else {
+      mostrarPantalla('adminPanelCard');
+    }
+  }
+
+  function cerrarSesionAdmin() {
+    adminActual = "";
+    sessionStorage.removeItem("adminActualSesion");
+    sessionStorage.removeItem("permisosAdminSesion");
+    document.getElementById("loginAdminPass").value = "";
+    document.getElementById("loginAdminUser").value = "";
+    mostrarPantalla('menuAccesoCard');
+  }
+</script>
+</body>  
+</html>
